@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var loadingProgress: ProgressBar
+    private lateinit var loadingScreen: View
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
@@ -110,12 +111,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.e("BASKIT_STARTUP", "Updated MainActivity is running")
+        Log.e("BASKIT_STARTUP", "Updated DailyCart MainActivity is running")
 
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
         loadingProgress = findViewById(R.id.loadingProgress)
+        loadingScreen = findViewById(R.id.loadingScreen)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -158,6 +160,7 @@ class MainActivity : AppCompatActivity() {
             ) {
                 super.onPageFinished(view, url)
 
+                loadingScreen.visibility = View.GONE
                 loadingProgress.visibility = View.GONE
                 webView.visibility = View.VISIBLE
             }
@@ -169,8 +172,10 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 progress: Int
             ) {
-                loadingProgress.visibility =
-                    if (progress < 100) View.VISIBLE else View.GONE
+                if (loadingScreen.visibility == View.VISIBLE) {
+                    loadingProgress.visibility =
+                        if (progress < 100) View.VISIBLE else View.GONE
+                }
             }
 
             override fun onShowFileChooser(
@@ -240,8 +245,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.visibility = View.INVISIBLE
+        loadingScreen.visibility = View.VISIBLE
+        loadingProgress.visibility = View.VISIBLE
 
-        // Load Baskit without clearing saved geolocation permissions.
+        // Load DailyCart without clearing saved geolocation permissions.
         webView.loadUrl("$WEBSITE_ORIGIN/")
 
         onBackPressedDispatcher.addCallback(
@@ -369,7 +376,6 @@ class MainActivity : AppCompatActivity() {
             error?.let { JSONObject.quote(it) } ?: "null"
 
         runOnUiThread {
-
             if (isFinishing || isDestroyed) return@runOnUiThread
 
             webView.evaluateJavascript(

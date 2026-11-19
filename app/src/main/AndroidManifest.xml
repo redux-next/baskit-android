@@ -10,9 +10,9 @@
         android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="GetBaskit"
+        android:label="DailyCart"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Baskit">
+        android:theme="@style/Theme.DailyCart">
 
         <activity
             android:name=".MainActivity"
@@ -29,3 +29,4 @@
     </application>
 
 </manifest>
+
