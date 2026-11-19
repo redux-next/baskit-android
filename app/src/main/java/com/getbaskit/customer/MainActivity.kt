@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
@@ -34,6 +35,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val WEB_CLIENT_ID =
             "28116496594-8675ig3qfb0ea5m4liicmqe35e4s05ie.apps.googleusercontent.com"
+
+        private const val WEBSITE_ORIGIN =
+            "https://getbaskit.netlify.app"
+
+        private const val GPS_TAG = "BASKIT_GPS"
     }
 
     private lateinit var webView: WebView
@@ -60,21 +66,52 @@ class MainActivity : AppCompatActivity() {
 
             val granted =
                 permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+                        hasLocationPermission()
 
-            pendingGeoCallback?.invoke(
-                pendingGeoOrigin,
-                granted,
-                false
-            )
+            val callback = pendingGeoCallback
+            val origin = pendingGeoOrigin
 
             pendingGeoCallback = null
             pendingGeoOrigin = null
+
+            Log.d(
+                GPS_TAG,
+                "Android permission result: granted=$granted, origin=$origin"
+            )
+
+            if (granted && !origin.isNullOrBlank()) {
+                GeolocationPermissions.getInstance().allow(origin)
+            }
+
+            callback?.invoke(origin, granted, granted)
+
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Location permission denied. Please enable location access in app settings.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.e("BASKIT_STARTUP", "Updated MainActivity is running")
+
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
@@ -89,9 +126,7 @@ class MainActivity : AppCompatActivity() {
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(false)
 
-            // Identify the native GetBaskit Android app.
-            userAgentString =
-                "$userAgentString BaskitAndroidApp"
+            userAgentString = "$userAgentString BaskitAndroidApp"
         }
 
         webView.webViewClient = object : WebViewClient() {
@@ -103,7 +138,6 @@ class MainActivity : AppCompatActivity() {
 
                 val url = request?.url ?: return false
 
-                // Intercept the native Google sign-in request.
                 if (
                     url.scheme == "baskit" &&
                     url.host == "google-sign-in"
@@ -112,7 +146,6 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
 
-                // Allow only the official GetBaskit website.
                 return !(
                         url.scheme == "https" &&
                                 url.host == "getbaskit.netlify.app"
@@ -124,6 +157,7 @@ class MainActivity : AppCompatActivity() {
                 url: String?
             ) {
                 super.onPageFinished(view, url)
+
                 loadingProgress.visibility = View.GONE
                 webView.visibility = View.VISIBLE
             }
@@ -157,41 +191,58 @@ class MainActivity : AppCompatActivity() {
                 callback: GeolocationPermissions.Callback?
             ) {
 
-                if (origin != "https://getbaskit.netlify.app") {
+                val parsedOrigin = Uri.parse(origin ?: "")
+
+                val isTrustedOrigin =
+                    parsedOrigin.scheme == "https" &&
+                            parsedOrigin.host == "getbaskit.netlify.app"
+
+                val hasPermission = hasLocationPermission()
+
+                Log.d(
+                    GPS_TAG,
+                    "Geolocation request: origin=$origin, trusted=$isTrustedOrigin, permission=$hasPermission"
+                )
+
+                if (!isTrustedOrigin || origin.isNullOrBlank()) {
+                    Log.e(GPS_TAG, "Rejected untrusted origin: $origin")
                     callback?.invoke(origin, false, false)
                     return
                 }
 
-                val fineGranted =
-                    ContextCompat.checkSelfPermission(
-                        this@MainActivity,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
+                if (hasPermission) {
+                    Log.d(GPS_TAG, "Android location permission already granted")
 
-                val coarseGranted =
-                    ContextCompat.checkSelfPermission(
-                        this@MainActivity,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
+                    GeolocationPermissions.getInstance().allow(origin)
+                    callback?.invoke(origin, true, true)
 
-                if (fineGranted || coarseGranted) {
-                    callback?.invoke(origin, true, false)
-                } else {
-                    pendingGeoCallback = callback
-                    pendingGeoOrigin = origin
-
-                    locationPermission.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
+                    return
                 }
+
+                Log.d(GPS_TAG, "Requesting Android location permission")
+
+                pendingGeoCallback?.invoke(
+                    pendingGeoOrigin,
+                    false,
+                    false
+                )
+
+                pendingGeoCallback = callback
+                pendingGeoOrigin = origin
+
+                locationPermission.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
             }
         }
 
         webView.visibility = View.INVISIBLE
-        webView.loadUrl("https://getbaskit.netlify.app/")
+
+        // Load Baskit without clearing saved geolocation permissions.
+        webView.loadUrl("$WEBSITE_ORIGIN/")
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -207,7 +258,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // Launch native Google sign-in.
     private fun startNativeGoogleSignIn() {
 
         if (googleSignInInProgress) return
@@ -245,13 +295,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Retrieve Google ID token using Credential Manager.
     private suspend fun getGoogleIdToken(): String {
 
-        val credentialManager =
-            CredentialManager.create(this)
+        val credentialManager = CredentialManager.create(this)
 
-        // First try accounts already authorized.
         val authorizedOption =
             GetGoogleIdOption.Builder()
                 .setServerClientId(WEB_CLIENT_ID)
@@ -272,8 +319,6 @@ class MainActivity : AppCompatActivity() {
 
         } catch (error: NoCredentialException) {
 
-            // If no previously authorized account exists,
-            // allow the user to select another Google account.
             val allAccountsOption =
                 GetGoogleIdOption.Builder()
                     .setServerClientId(WEB_CLIENT_ID)
@@ -312,7 +357,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // Return the Google token to the React application.
     private fun sendGoogleSignInResult(
         idToken: String?,
         error: String?
