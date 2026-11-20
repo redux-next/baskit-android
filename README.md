@@ -1,188 +1,149 @@
+# 🛒 DailyCart – Android App
 
-# Baskit Android
+**Freshness at Your Doorstep.**
 
-### Your everyday essentials, delivered.
+DailyCart is an Android application for the DailyCart grocery delivery platform, providing a convenient grocery shopping experience through Android WebView integration and native Android functionality.
 
-A native Android application for the Baskit online shopping platform, built using Kotlin and Android WebView.
+## 📸 App Preview
 
----
+![DailyCart Android App Preview](screenshots/baskit-android-preview.png)
 
-## App Preview
+## ✨ Features
 
-![Baskit Android App Preview](screenshots/baskit-android-preview.png)
+- 🛍️ Online grocery shopping
+- 🔐 Firebase Authentication
+- 🔑 Google Sign-In
+- 📧 Email and password authentication
+- 🚀 Custom branded loading screen
+- 🌐 WebView integration
+- 📍 Location access
+- 📷 Image and file upload support
+- 🔄 Native Android navigation
+- 👤 Firebase role-based authentication
 
----
-
-## About
-
-Baskit Android brings the Baskit shopping experience to Android devices by combining the existing web platform with native Android capabilities.
-
-The application uses Android WebView to load the live Baskit website while supporting native functionality such as Google Sign-In, file uploads, location access, and Android navigation.
-
-- **Live Website:** https://getbaskit.netlify.app/
-- **GitHub Repository:** https://github.com/redux-next/baskit-android
-
----
-
-## Features
-
-- **WebView Integration** – Access the Baskit shopping platform directly from the Android application.
-- **Native Google Sign-In** – Google authentication using Android Credential Manager and Firebase Authentication.
-- **Persistent Authentication** – Remain signed in between application launches.
-- **Custom Loading Screen** – Loading indicator displayed while the website initializes.
-- **File Upload Support** – Select and upload files through the Android application.
-- **Location Access** – Supports Android location permissions and browser geolocation.
-- **Navigation Support** – Android back-button handling within WebView.
-- **Secure Connection** – Connects to the live Baskit website over HTTPS.
-
----
-
-## Screenshots
-
-The application preview is available above.
-
----
-
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Technology | Purpose |
 |---|---|
-| Kotlin | Native Android development |
+| Kotlin | Android development |
+| XML | User interface |
 | Android Studio | Development environment |
-| Android WebView | Web application integration |
+| Android WebView | Web integration |
 | Firebase Authentication | User authentication |
-| Google Credential Manager | Native Google Sign-In |
-| Gradle | Build automation |
-| XML | Android layouts and resources |
-| Next.js | Web platform |
+| Android Credential Manager | Google Sign-In |
+| AndroidX | Android compatibility |
+| Material Design | UI components |
 
----
+## 📱 Application Information
 
-## Application Details
-
-| Property | Value |
+| Property | Details |
 |---|---|
-| Application Name | Baskit |
+| Application Name | DailyCart |
 | Package Name | `com.getbaskit.customer` |
+| Language | Kotlin |
+| UI | XML |
+| Architecture | Native Android + WebView |
+| Authentication | Firebase |
 | Platform | Android |
-| Programming Language | Kotlin |
-| Architecture | WebView-based Android application |
-| Authentication | Firebase Authentication |
-| Google Sign-In | Android Credential Manager |
-| Website | https://getbaskit.netlify.app/ |
 
----
-
-## Getting Started
-
-### Prerequisites
-
-Before running the project, make sure you have:
-
-- Android Studio
-- Android SDK
-- JDK compatible with the project's Gradle configuration
-- An Android device or emulator
-- Internet connection
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/redux-next/baskit-android.git
-   ```
-
-2. Open the project in Android Studio.
-
-3. Allow Gradle to sync.
-
-4. Connect an Android device or start an emulator.
-
-5. Click **Run** in Android Studio.
-
----
-
-## Build APK
-
-### Debug APK
-
-Run:
-
-```bash
-./gradlew assembleDebug
-```
-
-### Release APK
-
-Run:
-
-```bash
-./gradlew assembleRelease
-```
-
-Generated APK files can be found in:
+## 📂 Project Structure
 
 ```text
-app/build/outputs/apk/
-```
-
-**Note:** Release builds may require signing configuration before distribution.
-
----
-
-## Project Structure
-
-```text
-Baskit-Android/
-│
+DailyCart-Android/
 ├── app/
 │   ├── src/
 │   │   └── main/
 │   │       ├── java/
 │   │       │   └── com/getbaskit/customer/
-│   │       │       └── MainActivity.kt
-│   │       │
+│   │       │           └── MainActivity.kt
 │   │       ├── res/
 │   │       │   ├── drawable/
 │   │       │   ├── layout/
+│   │       │   ├── mipmap-*/
 │   │       │   └── values/
-│   │       │
 │   │       └── AndroidManifest.xml
-│   │
 │   └── build.gradle.kts
-│
 ├── gradle/
-│   └── libs.versions.toml
-│
+├── screenshots/
+│   └── baskit-android-preview.png
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── gradle.properties
-├── gradlew
-├── gradlew.bat
-├── .gitignore
 └── README.md
 ```
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Android Studio
+- Android SDK
+- Compatible JDK
+- Git
+
+### Clone the Repository
+
+```bash
+git clone YOUR_REPOSITORY_URL
+```
+
+### Setup
+
+1. Open the project in Android Studio.
+2. Allow Gradle to synchronize.
+3. Configure Firebase.
+4. Add the appropriate `google-services.json`.
+5. Enable Firebase Authentication.
+6. Configure Google Sign-In.
+7. Run the application on an Android device or emulator.
+
+## 🔐 Authentication
+
+DailyCart supports:
+
+- Google Sign-In.
+- Email and password registration.
+- Email and password login.
+- Firebase session management.
+- Firebase custom claims for role-based access.
+
+## 📍 Permissions
+
+The application uses Android permissions for:
+
+- Internet connectivity.
+- Fine location access.
+- Coarse location access.
+
+## 📦 Build APK
+
+1. Open the project in Android Studio.
+2. Navigate to **Build**.
+3. Select **Generate App Bundles or APKs**.
+4. Select **Build APK(s)**.
+5. Find the generated APK in the build output directory.
+
+For production releases, generate a signed APK or Android App Bundle.
+
+## 🔒 Security
+
+- HTTPS communication.
+- Firebase authentication.
+- Android runtime permissions.
+- Secure session management.
+- Role-based authorization.
+
+Never commit Firebase service account credentials, private signing keys, or passwords to a public repository.
+
+## 👨‍💻 Developer
+
+**Gyanam**
+
+- GitHub: [redux-next](https://github.com/redux-next)
+- LinkedIn: [Gyanam Gogoi](https://www.linkedin.com/in/gyanam-gogoi-0b9ab720a/)
+
 ---
 
-## Security
+**DailyCart 🛒**
 
-- Never commit Android signing keys or keystore passwords.
-- Keep private credentials and local configuration out of version control.
-- Use HTTPS for network communication.
-- Request Android permissions only when required.
-- Keep Firebase configuration and authentication settings secure.
-
----
-
-## Developer
-
-**GYANAM**
-
-- GitHub: https://github.com/redux-next
-- LinkedIn: https://www.linkedin.com/in/gyanam-gogoi-0b9ab720a/
-
----
-
-### Built with Kotlin and Firebase.
+*Freshness at Your Doorstep.*
