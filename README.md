@@ -84,7 +84,7 @@ DailyCart-Android/
 ### Clone the Repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+git clone https://github.com/redux-next/baskit-android.git
 ```
 
 ### Setup
