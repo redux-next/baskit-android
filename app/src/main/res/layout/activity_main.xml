@@ -1,62 +1,114 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/dailycart_bg">
 
+    <!-- Main WebView -->
     <WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="invisible" />
 
+    <!-- Loading Screen Layout -->
     <LinearLayout
-        android:id="@+id/loadingScreen"
+        android:id="@+id/loadingLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:gravity="center"
-        android:padding="28dp"
-        android:background="#FFFFFF">
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@color/dailycart_bg"
+        android:visibility="visible">
 
         <ImageView
-            android:id="@+id/loadingLogo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:maxWidth="360dp"
-            android:maxHeight="160dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/dailycart_loading_logo"
-            android:contentDescription="DailyCart logo" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:text="Freshness at your doorstep."
-            android:textColor="#064E3B"
-            android:textSize="16sp"
-            android:fontFamily="sans-serif-medium" />
-
-        <ProgressBar
-            android:id="@+id/loadingProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="145dp"
-            android:layout_height="4dp"
-            android:layout_marginTop="42dp"
-            android:indeterminate="true"
-            android:indeterminateTint="#16A34A"
-            android:progressTint="#16A34A" />
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_splash_logo"
+            android:elevation="2dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="PREPARING YOUR EXPERIENCE"
-            android:textColor="#64748B"
-            android:textSize="10sp"
+            android:text="@string/app_name"
+            android:textColor="@color/dailycart_green"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/app_description"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <ProgressBar
+            android:id="@+id/loadingProgress"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="28dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/dailycart_green" />
+
+    </LinearLayout>
+
+    <!-- Native Offline / Error Screen Layout -->
+    <LinearLayout
+        android:id="@+id/offlineLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/offline_bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:contentDescription="@string/offline_title"
+            android:src="@android:drawable/ic_dialog_alert"
+            app:tint="@color/dailycart_green"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/offline_title"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:letterSpacing="0.15" />
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/offline_message"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnRetry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/dailycart_green"
+            android:paddingStart="32dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="32dp"
+            android:paddingBottom="12dp"
+            android:text="@string/retry_button"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

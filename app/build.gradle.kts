@@ -1,12 +1,15 @@
-
 plugins {
     alias(libs.plugins.android.application)
 }
 
-val releaseStoreFile = providers.gradleProperty("BASKIT_RELEASE_STORE_FILE").orNull
-val releaseStorePassword = providers.gradleProperty("BASKIT_RELEASE_STORE_PASSWORD").orNull
-val releaseKeyAlias = providers.gradleProperty("BASKIT_RELEASE_KEY_ALIAS").orNull
-val releaseKeyPassword = providers.gradleProperty("BASKIT_RELEASE_KEY_PASSWORD").orNull
+val releaseStoreFile = providers.gradleProperty("DAILYCART_RELEASE_STORE_FILE")
+    .orElse(providers.gradleProperty("BASKIT_RELEASE_STORE_FILE")).orNull
+val releaseStorePassword = providers.gradleProperty("DAILYCART_RELEASE_STORE_PASSWORD")
+    .orElse(providers.gradleProperty("BASKIT_RELEASE_STORE_PASSWORD")).orNull
+val releaseKeyAlias = providers.gradleProperty("DAILYCART_RELEASE_KEY_ALIAS")
+    .orElse(providers.gradleProperty("BASKIT_RELEASE_KEY_ALIAS")).orNull
+val releaseKeyPassword = providers.gradleProperty("DAILYCART_RELEASE_KEY_PASSWORD")
+    .orElse(providers.gradleProperty("BASKIT_RELEASE_KEY_PASSWORD")).orNull
 
 android {
     namespace = "com.getbaskit.customer"
@@ -20,8 +23,8 @@ android {
         minSdk = 23
         targetSdk = 37
 
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,7 +43,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (!releaseStoreFile.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
 
             optimization {
                 enable = false
@@ -59,6 +64,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.material)
 
     testImplementation(libs.junit)

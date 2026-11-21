@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base Application Theme -->
     <style name="Theme.DailyCart" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#16A34A</item>
+        <item name="android:colorAccent">@color/dailycart_green</item>
+        <item name="android:colorPrimary">@color/dailycart_green</item>
         <item name="android:statusBarColor">#FFFFFF</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowBackground">#FFFFFF</item>
     </style>
-</resources>
 
+    <!-- Legacy Theme Alias for Backwards Compatibility -->
+    <style name="Theme.Baskit" parent="Theme.DailyCart" />
+
+    <!-- Native Splash Starting Theme -->
+    <style name="Theme.DailyCart.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.DailyCart</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

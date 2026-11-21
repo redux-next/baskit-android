@@ -1,30 +1,42 @@
-
 package com.getbaskit.customer
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
@@ -39,18 +51,26 @@ class MainActivity : AppCompatActivity() {
         private const val WEBSITE_ORIGIN =
             "https://getbaskit.netlify.app"
 
-        private const val GPS_TAG = "BASKIT_GPS"
+        private const val GPS_TAG = "DAILYCART_GPS"
+        private const val STARTUP_TAG = "DAILYCART_STARTUP"
+        private const val AUTH_TAG = "DAILYCART_AUTH"
     }
 
     private lateinit var webView: WebView
+    private lateinit var loadingLayout: LinearLayout
     private lateinit var loadingProgress: ProgressBar
-    private lateinit var loadingScreen: View
+    private lateinit var offlineLayout: LinearLayout
+    private lateinit var btnRetry: Button
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingGeoOrigin: String? = null
 
     private var googleSignInInProgress = false
+    private var isErrorState = false
+
+    private var connectivityManager: ConnectivityManager? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private val filePicker =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -90,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             if (!granted) {
                 Toast.makeText(
                     this,
-                    "Location permission denied. Please enable location access in app settings.",
+                    getString(R.string.location_denied_message),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -107,28 +127,93 @@ class MainActivity : AppCompatActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun isNetworkAvailable(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork = cm.activeNetwork ?: return false
+        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
 
-        Log.e("BASKIT_STARTUP", "Updated DailyCart MainActivity is running")
+        // Prevent color flashes during window transition
+        window.setBackgroundDrawableResource(R.color.splash_background)
+
+        // Subtle, smooth splash exit fade transition
+        splashScreen.setOnExitAnimationListener { splashScreenViewProvider ->
+            val fadeOut = ObjectAnimator.ofFloat(
+                splashScreenViewProvider.view,
+                View.ALPHA,
+                1f,
+                0f
+            )
+            fadeOut.duration = 200L
+            fadeOut.interpolator = AccelerateDecelerateInterpolator()
+            fadeOut.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    splashScreenViewProvider.remove()
+                }
+            })
+            fadeOut.start()
+        }
+
+        Log.i(STARTUP_TAG, "DailyCart MainActivity initialized")
 
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
+        loadingLayout = findViewById(R.id.loadingLayout)
         loadingProgress = findViewById(R.id.loadingProgress)
-        loadingScreen = findViewById(R.id.loadingScreen)
+        offlineLayout = findViewById(R.id.offlineLayout)
+        btnRetry = findViewById(R.id.btnRetry)
 
+        setupWebView()
+        setupNetworkCallback()
+
+        btnRetry.setOnClickListener {
+            retryLoading()
+        }
+
+        if (isNetworkAvailable()) {
+            showLoadingState()
+            webView.loadUrl("$WEBSITE_ORIGIN/")
+        } else {
+            showOfflineState()
+        }
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (isErrorState || offlineLayout.visibility == View.VISIBLE) {
+                        finish()
+                    } else if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        finish()
+                    }
+                }
+            }
+        )
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupWebView() {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            @Suppress("DEPRECATION")
             databaseEnabled = true
             setGeolocationEnabled(true)
             allowFileAccess = true
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(false)
 
-            userAgentString = "$userAgentString BaskitAndroidApp"
+            userAgentString = "$userAgentString DailyCartAndroidApp BaskitAndroidApp"
         }
 
         webView.webViewClient = object : WebViewClient() {
@@ -140,18 +225,49 @@ class MainActivity : AppCompatActivity() {
 
                 val url = request?.url ?: return false
 
-                if (
-                    url.scheme == "baskit" &&
+                if ((url.scheme == "dailycart" || url.scheme == "baskit") &&
                     url.host == "google-sign-in"
                 ) {
                     startNativeGoogleSignIn()
                     return true
                 }
 
-                return !(
-                        url.scheme == "https" &&
-                                url.host == "getbaskit.netlify.app"
-                        )
+                // Keep DailyCart website inside WebView
+                val isDailyCartUrl = url.scheme == "https" &&
+                        (url.host == "getbaskit.netlify.app" || url.host?.endsWith(".netlify.app") == true)
+
+                if (isDailyCartUrl) {
+                    return false
+                }
+
+                // Open external links in external browser
+                return try {
+                    val intent = Intent(Intent.ACTION_VIEW, url)
+                    startActivity(intent)
+                    true
+                } catch (e: Exception) {
+                    Log.e(STARTUP_TAG, "Could not open external URL: $url", e)
+                    true
+                }
+            }
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                isErrorState = false
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+
+                if (request?.isForMainFrame == true) {
+                    Log.e(STARTUP_TAG, "Main frame load error: ${error?.description}")
+                    isErrorState = true
+                    showOfflineState()
+                }
             }
 
             override fun onPageFinished(
@@ -160,9 +276,9 @@ class MainActivity : AppCompatActivity() {
             ) {
                 super.onPageFinished(view, url)
 
-                loadingScreen.visibility = View.GONE
-                loadingProgress.visibility = View.GONE
-                webView.visibility = View.VISIBLE
+                if (!isErrorState) {
+                    showContentState()
+                }
             }
         }
 
@@ -172,9 +288,12 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 progress: Int
             ) {
-                if (loadingScreen.visibility == View.VISIBLE) {
-                    loadingProgress.visibility =
-                        if (progress < 100) View.VISIBLE else View.GONE
+                if (!isErrorState && offlineLayout.visibility != View.VISIBLE) {
+                    if (progress < 100) {
+                        loadingProgress.visibility = View.VISIBLE
+                    } else {
+                        loadingProgress.visibility = View.GONE
+                    }
                 }
             }
 
@@ -200,7 +319,8 @@ class MainActivity : AppCompatActivity() {
 
                 val isTrustedOrigin =
                     parsedOrigin.scheme == "https" &&
-                            parsedOrigin.host == "getbaskit.netlify.app"
+                            (parsedOrigin.host == "getbaskit.netlify.app" ||
+                                    parsedOrigin.host?.endsWith(".netlify.app") == true)
 
                 val hasPermission = hasLocationPermission()
 
@@ -243,26 +363,72 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+    }
 
-        webView.visibility = View.INVISIBLE
-        loadingScreen.visibility = View.VISIBLE
-        loadingProgress.visibility = View.VISIBLE
+    private fun setupNetworkCallback() {
+        connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        // Load DailyCart without clearing saved geolocation permissions.
-        webView.loadUrl("$WEBSITE_ORIGIN/")
-
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (webView.canGoBack()) {
-                        webView.goBack()
-                    } else {
-                        finish()
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    if (offlineLayout.visibility == View.VISIBLE || isErrorState) {
+                        retryLoading()
                     }
                 }
             }
-        )
+
+            override fun onLost(network: Network) {
+                runOnUiThread {
+                    if (!isNetworkAvailable()) {
+                        showOfflineState()
+                    }
+                }
+            }
+        }
+
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager?.registerNetworkCallback(request, networkCallback!!)
+    }
+
+    private fun retryLoading() {
+        if (isNetworkAvailable()) {
+            isErrorState = false
+            showLoadingState()
+            if (webView.url.isNullOrBlank()) {
+                webView.loadUrl("$WEBSITE_ORIGIN/")
+            } else {
+                webView.reload()
+            }
+        } else {
+            Toast.makeText(
+                this,
+                getString(R.string.offline_message),
+                Toast.LENGTH_SHORT
+            ).show()
+            showOfflineState()
+        }
+    }
+
+    private fun showLoadingState() {
+        offlineLayout.visibility = View.GONE
+        webView.visibility = View.INVISIBLE
+        loadingLayout.visibility = View.VISIBLE
+        loadingProgress.visibility = View.VISIBLE
+    }
+
+    private fun showContentState() {
+        offlineLayout.visibility = View.GONE
+        loadingLayout.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+    }
+
+    private fun showOfflineState() {
+        webView.visibility = View.INVISIBLE
+        loadingLayout.visibility = View.GONE
+        offlineLayout.visibility = View.VISIBLE
     }
 
     private fun startNativeGoogleSignIn() {
@@ -281,6 +447,7 @@ class MainActivity : AppCompatActivity() {
                 )
 
             } catch (error: Exception) {
+                Log.e(AUTH_TAG, "Google sign-in error", error)
 
                 val message =
                     error.message ?: "Google sign-in failed."
@@ -318,13 +485,11 @@ class MainActivity : AppCompatActivity() {
                 .build()
 
         val result = try {
-
             credentialManager.getCredential(
                 context = this,
                 request = authorizedRequest
             )
-
-        } catch (error: NoCredentialException) {
+        } catch (_: NoCredentialException) {
 
             val allAccountsOption =
                 GetGoogleIdOption.Builder()
@@ -376,6 +541,7 @@ class MainActivity : AppCompatActivity() {
             error?.let { JSONObject.quote(it) } ?: "null"
 
         runOnUiThread {
+
             if (isFinishing || isDestroyed) return@runOnUiThread
 
             webView.evaluateJavascript(
@@ -393,6 +559,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        try {
+            networkCallback?.let {
+                connectivityManager?.unregisterNetworkCallback(it)
+            }
+        } catch (e: Exception) {
+            Log.e(STARTUP_TAG, "Error unregistering network callback", e)
+        }
 
         fileUploadCallback?.onReceiveValue(null)
         fileUploadCallback = null

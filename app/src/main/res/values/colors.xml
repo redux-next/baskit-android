@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="splash_background">#F7F8F3</color>
+    <color name="splash_accent">#C9EF81</color>
+    <color name="splash_logo_foreground">#171D0C</color>
+    <color name="splash_brand_text">#171D0C</color>
+    <color name="splash_secondary_text">#6F7369</color>
+
+    <color name="dailycart_green">#16A34A</color>
+    <color name="dailycart_green_dark">#15803D</color>
+    <color name="dailycart_green_light">#22C55E</color>
+    <color name="dailycart_bg">#FFFFFF</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="text_primary">#171D0C</color>
+    <color name="text_secondary">#6F7369</color>
+    <color name="offline_bg">#F9FAFB</color>
 </resources>

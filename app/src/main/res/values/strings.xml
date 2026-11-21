@@ -2,4 +2,9 @@
 <resources>
     <string name="app_name">DailyCart</string>
     <string name="google_web_client_id">28116496594-8675ig3qfb0ea5m4liicmqe35e4s05ie.apps.googleusercontent.com</string>
+    <string name="offline_title">No Internet Connection</string>
+    <string name="offline_message">Please check your internet connection and try again.</string>
+    <string name="retry_button">Retry</string>
+    <string name="location_denied_message">Location permission denied. Please enable location access in app settings.</string>
+    <string name="app_description">Your everyday essentials, delivered.</string>
 </resources>
